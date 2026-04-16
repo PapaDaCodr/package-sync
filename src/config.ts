@@ -51,7 +51,7 @@ export function ensureGitignore(dir: string, entries: string[]): void {
   // Add a psync section
   const section = [
     "",
-    "# pkg-sync (local lock files + dev config)",
+    "# unisync (local lock files + dev config)",
     ...toAdd,
   ].join("\n");
 

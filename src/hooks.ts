@@ -2,8 +2,8 @@ import fs from "fs";
 import path from "path";
 import { PackageManager } from "./detector";
 
-const PSYNC_MARKER_START = "# >>> pkg-sync hooks >>>";
-const PSYNC_MARKER_END = "# <<< pkg-sync hooks <<<";
+const PSYNC_MARKER_START = "# >>> unisync hooks >>>";
+const PSYNC_MARKER_END = "# <<< unisync hooks <<<";
 
 const LOCK_FILE_MAP: Record<PackageManager, string> = {
   npm: "package-lock.json",
@@ -13,7 +13,7 @@ const LOCK_FILE_MAP: Record<PackageManager, string> = {
 };
 
 /**
- * Install git hooks for pkg-sync.
+ * Install git hooks for unisync.
  * Appends to existing hooks rather than overwriting — plays nice with husky, etc.
  */
 export function installHooks(
@@ -43,7 +43,7 @@ export function installHooks(
 }
 
 /**
- * Remove pkg-sync hooks from all hook files.
+ * Remove unisync hooks from all hook files.
  */
 export function uninstallHooks(projectDir: string): void {
   const gitDir = findGitDir(projectDir);
@@ -104,7 +104,7 @@ function writeHook(hooksDir: string, hookName: string, script: string): void {
 
 function preCommitScript(canonicalLock: string): string {
   return `${PSYNC_MARKER_START}
-# pkg-sync: sync canonical lock file on commit
+# unisync: sync canonical lock file on commit
 if git diff --cached --name-only | grep -q "^package.json$"; then
   if command -v npx >/dev/null 2>&1; then
     npx --yes psync sync --stage
@@ -116,11 +116,11 @@ ${PSYNC_MARKER_END}`;
 
 function postMergeScript(canonicalLock: string): string {
   return `${PSYNC_MARKER_START}
-# pkg-sync: reinstall after merge if lock file changed
+# unisync: reinstall after merge if lock file changed
 CHANGED_FILES=$(git diff HEAD@{1} --name-only 2>/dev/null || true)
 if echo "$CHANGED_FILES" | grep -q "^${canonicalLock}$"; then
   if command -v npx >/dev/null 2>&1; then
-    echo "pkg-sync: ${canonicalLock} changed, running install..."
+    echo "unisync: ${canonicalLock} changed, running install..."
     npx --yes psync install
   fi
 fi
@@ -129,13 +129,13 @@ ${PSYNC_MARKER_END}`;
 
 function postCheckoutScript(canonicalLock: string): string {
   return `${PSYNC_MARKER_START}
-# pkg-sync: reinstall after branch switch if lock file changed
+# unisync: reinstall after branch switch if lock file changed
 # Only run on branch switches ($3 == 1), not file checkouts
 if [ "$3" = "1" ]; then
   CHANGED_FILES=$(git diff "$1" "$2" --name-only 2>/dev/null || true)
   if echo "$CHANGED_FILES" | grep -q "^${canonicalLock}$"; then
     if command -v npx >/dev/null 2>&1; then
-      echo "pkg-sync: ${canonicalLock} changed, running install..."
+      echo "unisync: ${canonicalLock} changed, running install..."
       npx --yes psync install
     fi
   fi
