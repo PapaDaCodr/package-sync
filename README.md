@@ -1,8 +1,8 @@
-# package-sync
+# pkg-sync
 
 **Use any package manager. One lock file stays in charge.**
 
-package-sync lets every developer on a team use their preferred package manager (npm, yarn, pnpm, or bun) while keeping a single canonical lock file in the git repository. No conflicts, no drift, no compromises.
+pkg-sync lets every developer on a team use their preferred package manager (npm, yarn, pnpm, or bun) while keeping a single canonical lock file in the git repository. No conflicts, no drift, no compromises.
 
 ## The Problem
 
@@ -12,7 +12,7 @@ The naive fix — "just use the same manager" — ignores that developers have l
 
 ## The Solution
 
-package-sync works like how git handles line endings — transparently.
+pkg-sync works like how git handles line endings — transparently.
 
 ```
         ┌─────────── Git Repo ───────────┐
@@ -45,7 +45,7 @@ package-sync works like how git handles line endings — transparently.
 ### Project Owner (one-time setup)
 
 ```bash
-npx package-sync init
+npx pkg-sync init
 ```
 
 This will:
@@ -57,7 +57,7 @@ This will:
 ### Collaborators
 
 ```bash
-npx package-sync setup
+npx pkg-sync setup
 ```
 
 This will:
@@ -122,7 +122,7 @@ pre-commit hook fires
 
 ### Version Pinning
 
-package-sync strips range prefixes (`^`, `~`) from `package.json` before committing. This ensures every package manager resolves to the exact same version:
+pkg-sync strips range prefixes (`^`, `~`) from `package.json` before committing. This ensures every package manager resolves to the exact same version:
 
 ```json
 // Before (what bun/npm/yarn writes)
@@ -136,7 +136,7 @@ This eliminates version drift across managers entirely.
 
 ### Lightweight Lock File Generation
 
-package-sync generates canonical lock files **without needing that manager installed**. It reads the data directly from `node_modules/*/package.json`, where package managers store `_resolved` and `_integrity` fields during install.
+pkg-sync generates canonical lock files **without needing that manager installed**. It reads the data directly from `node_modules/*/package.json`, where package managers store `_resolved` and `_integrity` fields during install.
 
 Supported canonical formats:
 - `package-lock.json` (npm, lockfileVersion 3)
@@ -183,7 +183,7 @@ src/
 
 ### Git Hooks
 
-package-sync installs three hooks. They append to existing hooks — compatible with husky, lint-staged, etc.
+pkg-sync installs three hooks. They append to existing hooks — compatible with husky, lint-staged, etc.
 
 | Hook | Trigger | Action |
 |------|---------|--------|
@@ -197,7 +197,7 @@ package-sync installs three hooks. They append to existing hooks — compatible 
 
 The first approach was to intercept `npm install express` and convert it to `yarn add express`. This is simpler but **defeats the purpose** — the developer chose npm for a reason (speed, disk layout, familiarity). Translating commands strips away those benefits.
 
-package-sync lets every manager run natively. Only the lock file is synchronized.
+pkg-sync lets every manager run natively. Only the lock file is synchronized.
 
 ### Why pin versions?
 
@@ -205,11 +205,11 @@ If `package.json` says `"express": "^4.21.0"`, npm might resolve to `4.21.0` whi
 
 ### Why generate lock files without the CLI?
 
-Requiring every developer to have the canonical manager installed defeats the purpose. A pnpm user shouldn't need yarn installed just because the project uses `yarn.lock` as canonical. package-sync reads the universal data from `node_modules` and writes the lock format directly.
+Requiring every developer to have the canonical manager installed defeats the purpose. A pnpm user shouldn't need yarn installed just because the project uses `yarn.lock` as canonical. pkg-sync reads the universal data from `node_modules` and writes the lock format directly.
 
 ### Zero runtime dependencies
 
-package-sync has **zero runtime dependencies** — only TypeScript and `@types/node` as dev dependencies. This is intentional:
+pkg-sync has **zero runtime dependencies** — only TypeScript and `@types/node` as dev dependencies. This is intentional:
 - Smaller install footprint
 - No supply chain risk from transitive dependencies
 - Higher scores on security auditing tools (Socket.dev, Snyk)

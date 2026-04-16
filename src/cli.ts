@@ -48,7 +48,7 @@ async function main(): Promise<void> {
 async function init(): Promise<void> {
   const cwd = process.cwd();
 
-  console.log("package-sync — project setup\n");
+  console.log("pkg-sync — project setup\n");
 
   // 1. Detect or ask for canonical manager
   const locks = listLockFiles(cwd);
@@ -94,12 +94,12 @@ async function init(): Promise<void> {
 Setup complete! Here's what happens now:
 
   1. You work normally with "${canonical}"
-  2. Collaborators clone the repo and run: npx package-sync setup
+  2. Collaborators clone the repo and run: npx pkg-sync setup
   3. They pick their preferred manager and work normally
   4. Git hooks keep ${getLockFileName(canonical)} in sync automatically
 
 Share this with your team:
-  npx package-sync setup
+  npx pkg-sync setup
 `);
 }
 
@@ -117,7 +117,7 @@ async function setup(): Promise<void> {
     process.exit(1);
   }
 
-  console.log(`package-sync — developer setup`);
+  console.log(`pkg-sync — developer setup`);
   console.log(`Canonical manager: ${projectConfig.canonicalManager}\n`);
 
   // 1. Ask preferred manager
@@ -159,7 +159,7 @@ function detect(): void {
   const detectedManager = detectManager(cwd);
   const locks = listLockFiles(cwd);
 
-  console.log("package-sync status\n");
+  console.log("pkg-sync status\n");
 
   if (projectConfig) {
     console.log(`  Canonical manager : ${projectConfig.canonicalManager}`);
@@ -255,7 +255,7 @@ function hooks(args: string[]): void {
 
 function help(): void {
   console.log(`
-package-sync (psync) — Use any package manager. One lock file stays in charge.
+pkg-sync (psync) — Use any package manager. One lock file stays in charge.
 
 Commands:
   psync init          Set up the canonical manager for this project (project owner)

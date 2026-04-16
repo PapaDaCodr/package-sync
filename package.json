@@ -1,5 +1,5 @@
 {
-  "name": "package-sync",
+  "name": "pkg-sync",
   "version": "0.1.0",
   "description": "Universal package manager interceptor — use any package manager, one lock file stays in charge.",
   "main": "dist/index.js",
@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "test": "node --import tsx --test tests/*.test.ts",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -25,6 +26,7 @@
   "type": "commonjs",
   "devDependencies": {
     "@types/node": "20.14.0",
+    "tsx": "^4.21.0",
     "typescript": "5.4.5"
   },
   "files": [
