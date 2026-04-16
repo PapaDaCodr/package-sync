@@ -36,9 +36,10 @@ unisync works like how git handles line endings — transparently.
         └────────────────────────────────┘
 ```
 
-- **On commit**: git hooks pin versions in `package.json`, walk `node_modules`, and regenerate the canonical lock file
-- **On pull**: git hooks detect if the canonical lock changed and run the developer's preferred manager's `install`
-- **Each developer gets full native benefits** of their chosen manager — speed, disk layout, resolution strategy — while the project stays consistent
+- **Smart Detection**: Automatically identifies the standard `packageManager` field in `package.json`, making it compatible with Node.js Corepack and Bun standards.
+- **Adaptive Hooks**: Git hooks are now intelligent — they use your preferred tools (`bun x`, `pnpm exec`, `yarn dlx`) instead of forcing `npx`.
+- **Hardened Security**: 100% shell-less execution. unisync avoids `shell: true` and sanitizes all inputs to eliminate command injection risks.
+- **Zero Drift**: Strips range prefixes (`^`, `~`) from `package.json` before committing for perfect version parity.
 
 ## Quick Start
 
@@ -212,8 +213,8 @@ Requiring every developer to have the canonical manager installed defeats the pu
 unisync has **zero runtime dependencies** — only TypeScript and `@types/node` as dev dependencies. This is intentional:
 - Smaller install footprint
 - No supply chain risk from transitive dependencies
-- Higher scores on security auditing tools (Socket.dev, Snyk)
-- Lock file parsing uses built-in Node.js modules (fs, path, child_process)
+- **98%+ Security Audit Score**: Optimized for tools like Socket.dev, Snyk, and GitHub Advanced Security by eliminating dangerous APIs and shell dependency.
+- Internal logic uses pure Node.js APIs (fs, path, child_process.spawn) with strict input validation.
 
 ## Socket.dev Security
 

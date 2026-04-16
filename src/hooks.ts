@@ -19,6 +19,7 @@ const LOCK_FILE_MAP: Record<PackageManager, string> = {
 export function installHooks(
   projectDir: string,
   canonicalManager: PackageManager,
+  preferredManager: PackageManager = canonicalManager,
 ): void {
   const gitDir = findGitDir(projectDir);
   if (!gitDir) {
@@ -32,14 +33,14 @@ export function installHooks(
 
   const canonicalLock = LOCK_FILE_MAP[canonicalManager];
 
-  // Pre-commit: sync lock file before committing
-  writeHook(hooksDir, "pre-commit", preCommitScript(canonicalLock));
+  // Pre-commit: sync lock file before committing (runs on canonical manager standard)
+  writeHook(hooksDir, "pre-commit", preCommitScript(canonicalLock, preferredManager));
 
   // Post-merge: reinstall after pulling changes
-  writeHook(hooksDir, "post-merge", postMergeScript(canonicalLock));
+  writeHook(hooksDir, "post-merge", postMergeScript(canonicalLock, preferredManager));
 
   // Post-checkout: reinstall after switching branches
-  writeHook(hooksDir, "post-checkout", postCheckoutScript(canonicalLock));
+  writeHook(hooksDir, "post-checkout", postCheckoutScript(canonicalLock, preferredManager));
 }
 
 /**
@@ -102,42 +103,48 @@ function writeHook(hooksDir: string, hookName: string, script: string): void {
   fs.chmodSync(hookPath, 0o755);
 }
 
-function preCommitScript(canonicalLock: string): string {
+function getExecCmd(manager: PackageManager): string {
+  switch (manager) {
+    case "bun": return "bun x";
+    case "pnpm": return "pnpm exec";
+    case "yarn": return "yarn dlx";
+    default: return "npx --yes";
+  }
+}
+
+function preCommitScript(canonicalLock: string, preferred: PackageManager): string {
+  const exec = getExecCmd(preferred);
   return `${PSYNC_MARKER_START}
 # unisync: sync canonical lock file on commit
 if git diff --cached --name-only | grep -q "^package.json$"; then
-  if command -v npx >/dev/null 2>&1; then
-    npx --yes psync sync --stage
-    git add package.json ${canonicalLock}
-  fi
+  ${exec} psync sync --stage
+  git add package.json ${canonicalLock}
 fi
 ${PSYNC_MARKER_END}`;
 }
 
-function postMergeScript(canonicalLock: string): string {
+function postMergeScript(canonicalLock: string, preferred: PackageManager): string {
+  const exec = getExecCmd(preferred);
   return `${PSYNC_MARKER_START}
 # unisync: reinstall after merge if lock file changed
 CHANGED_FILES=$(git diff HEAD@{1} --name-only 2>/dev/null || true)
 if echo "$CHANGED_FILES" | grep -q "^${canonicalLock}$"; then
-  if command -v npx >/dev/null 2>&1; then
-    echo "unisync: ${canonicalLock} changed, running install..."
-    npx --yes psync install
-  fi
+  echo "unisync: ${canonicalLock} changed, running install..."
+  ${exec} psync install
 fi
 ${PSYNC_MARKER_END}`;
 }
 
-function postCheckoutScript(canonicalLock: string): string {
+function postCheckoutScript(canonicalLock: string, preferred: PackageManager): string {
+  const exec = getExecCmd(preferred);
   return `${PSYNC_MARKER_START}
 # unisync: reinstall after branch switch if lock file changed
 # Only run on branch switches ($3 == 1), not file checkouts
 if [ "$3" = "1" ]; then
   CHANGED_FILES=$(git diff "$1" "$2" --name-only 2>/dev/null || true)
   if echo "$CHANGED_FILES" | grep -q "^${canonicalLock}$"; then
-    if command -v npx >/dev/null 2>&1; then
-      echo "unisync: ${canonicalLock} changed, running install..."
-      npx --yes psync install
-    fi
+    echo "unisync: ${canonicalLock} changed, running install..."
+    ${exec} psync install
   fi
 fi
 ${PSYNC_MARKER_END}`;

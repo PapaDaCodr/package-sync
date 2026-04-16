@@ -62,7 +62,28 @@ export function ensureGitignore(dir: string, entries: string[]): void {
 function readJson<T>(filePath: string): T | null {
   if (!fs.existsSync(filePath)) return null;
   try {
-    return JSON.parse(fs.readFileSync(filePath, "utf-8")) as T;
+    const content = fs.readFileSync(filePath, "utf-8");
+    const parsed = JSON.parse(content);
+
+    // Security Layer: Basic validation to prevent prototype pollution and ensure valid schema
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return null;
+    }
+
+    // Validate specific fields if they exist
+    const VALID_MANAGERS = ["npm", "yarn", "pnpm", "bun"];
+    
+    if ("canonicalManager" in parsed && !VALID_MANAGERS.includes((parsed as any).canonicalManager)) {
+      console.warn(`psync: invalid canonicalManager "${(parsed as any).canonicalManager}" in ${filePath}`);
+      return null;
+    }
+
+    if ("preferredManager" in parsed && !VALID_MANAGERS.includes((parsed as any).preferredManager)) {
+      console.warn(`psync: invalid preferredManager "${(parsed as any).preferredManager}" in ${filePath}`);
+      return null;
+    }
+
+    return parsed as T;
   } catch {
     return null;
   }

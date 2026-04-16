@@ -132,7 +132,7 @@ async function setup(): Promise<void> {
 
   // 3. Install git hooks
   try {
-    installHooks(cwd, projectConfig.canonicalManager);
+    installHooks(cwd, projectConfig.canonicalManager, preferred);
     console.log("Installed git hooks");
   } catch (err) {
     console.warn(`Warning: could not install git hooks: ${(err as Error).message}`);
@@ -236,7 +236,8 @@ function hooks(args: string[]): void {
       console.error('psync: no .psyncrc.json found. Run "psync init" first.');
       process.exit(1);
     }
-    installHooks(cwd, config.canonicalManager);
+    const localConfig = readLocalConfig(cwd);
+    installHooks(cwd, config.canonicalManager, localConfig?.preferredManager);
     console.log("psync: git hooks installed");
     return;
   }

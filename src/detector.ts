@@ -17,16 +17,33 @@ const LOCK_FILES: LockFileEntry[] = [
 ];
 
 /**
- * Walk up from `startDir` looking for a lock file.
+ * Walk up from `startDir` looking for a lock file or a package.json with a "packageManager" field.
  * Returns the first match — closest to the working directory wins.
  */
 export function detectManager(startDir: string = process.cwd()): PackageManager | null {
   let dir = path.resolve(startDir);
 
   while (true) {
+    // 1. Check for lock files (strongest signal)
     for (const entry of LOCK_FILES) {
       if (fs.existsSync(path.join(dir, entry.file))) {
         return entry.manager;
+      }
+    }
+
+    // 2. Check package.json "packageManager" field
+    const pkgPath = path.join(dir, "package.json");
+    if (fs.existsSync(pkgPath)) {
+      try {
+        const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+        if (pkg.packageManager && typeof pkg.packageManager === "string") {
+          const [name] = pkg.packageManager.split("@");
+          if (["npm", "yarn", "pnpm", "bun"].includes(name)) {
+            return name as PackageManager;
+          }
+        }
+      } catch {
+        // Ignore malformed package.json
       }
     }
 
